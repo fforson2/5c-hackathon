@@ -29,3 +29,10 @@ The backend (see `../backend/README.md`) must be running on port 3002 for data t
 - `app/` — layout, global styles (palette tokens, light/dark via `prefers-color-scheme`)
 - `components/` — one component per section (`Hero`, `Tracks`, `Prizes`, `Schedule`, `Faq`, `RegisterForm`, `TeamBoard`)
 - `lib/api.ts` — typed API client matching `docs/api-contract.md`; `lib/types.ts` — shared types
+
+## Deploy (Vercel, 5chack.com)
+
+1. Import the GitHub repo in Vercel and set **Root Directory** to `frontend`.
+2. Add the env var `NEXT_PUBLIC_API_URL=https://api.5chack.com/api` (it is inlined at build time, so redeploy after changing it).
+3. Add the domains `5chack.com` (primary) and `www.5chack.com` (redirect to primary) under Project → Settings → Domains.
+4. At Squarespace (Domains → `5chack.com` → DNS Settings) add the records Vercel shows, and remove any default records pointing at Squarespace's site builder.
