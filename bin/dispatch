@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# Usage: bin/dispatch <frontend|backend|reviewer> <jobfile | ->
+# Saves the job in docs/inbox/<role>/ and types a prompt into that role's terminal.
+set -euo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+role="${1:-}"; src="${2:-}"
+case "$role" in frontend|backend|reviewer) ;; *) echo "role must be frontend|backend|reviewer" >&2; exit 1;; esac
+[ -n "$src" ] || { echo "usage: dispatch <role> <file|->" >&2; exit 1; }
+id="$(date +%Y%m%d-%H%M%S)-$RANDOM"
+job="docs/inbox/$role/$id.md"
+mkdir -p "$ROOT/docs/inbox/$role" "$ROOT/docs/outbox" "$ROOT/docs/done"
+if [ "$src" = "-" ]; then cat > "$ROOT/$job"; else cp "$src" "$ROOT/$job"; fi
+wid="$(cat "$ROOT/docs/.terminals/$role" 2>/dev/null || true)"
+if [ -z "$wid" ]; then echo "warning: no terminal registered for $role (run bin/start-team.sh); job saved in $job" >&2; echo "$id"; exit 0; fi
+prompt="New job from the manager: read $job, do the work within your scope, then write your report (what changed, files touched, how you verified, open issues) to docs/outbox/$role-$id.md and move the job file to docs/done/$role-$id.md."
+osascript - "$wid" "$prompt" <<'OSA'
+on run argv
+  tell application "Terminal"
+    do script (item 2 of argv) in window id ((item 1 of argv) as integer)
+    delay 1
+    do script "" in window id ((item 1 of argv) as integer)
+  end tell
+end run
+OSA
+echo "$id"
