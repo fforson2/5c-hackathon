@@ -192,7 +192,37 @@ export class RedisStore implements DataStore {
   }
 }
 
-/** Pick Redis when Upstash/Vercel KV REST env vars are set, otherwise the local file store. */
+/** Ephemeral in-memory store for serverless when Redis env vars are missing. */
+export class MemoryStore implements DataStore {
+  private registrations: Registration[] = [];
+  private teams: Team[] = [];
+  private emails = new Set<string>();
+
+  async stats() {
+    return { registrations: this.registrations.length, teams: this.teams.length };
+  }
+
+  async addRegistration(input: Omit<Registration, "id" | "createdAt">): Promise<Registration> {
+    const email = input.email.toLowerCase();
+    if (this.emails.has(email)) throw dupError();
+    const reg: Registration = { ...input, email, id: randomUUID(), createdAt: new Date().toISOString() };
+    this.emails.add(email);
+    this.registrations.push(reg);
+    return reg;
+  }
+
+  async addTeam(input: Omit<Team, "id" | "createdAt">): Promise<Team> {
+    const team: Team = { ...input, id: randomUUID(), createdAt: new Date().toISOString() };
+    this.teams.unshift(team);
+    return team;
+  }
+
+  async listTeams(lookingFor?: string): Promise<Team[]> {
+    return this.teams.filter((t) => matchesSkill(t, lookingFor));
+  }
+}
+
+/** Pick Redis when Upstash/Vercel KV REST env vars are set; MemoryStore on Vercel; files locally. */
 export function createStoreFromEnv(env: NodeJS.ProcessEnv = process.env): DataStore {
   const url = env.UPSTASH_REDIS_REST_URL ?? env.KV_REST_API_URL;
   const token = env.UPSTASH_REDIS_REST_TOKEN ?? env.KV_REST_API_TOKEN;
@@ -200,5 +230,7 @@ export function createStoreFromEnv(env: NodeJS.ProcessEnv = process.env): DataSt
     // automaticDeserialization off: we store/read plain JSON strings ourselves.
     return new RedisStore(new Redis({ url, token, automaticDeserialization: false }) as unknown as RedisLike);
   }
+  // Vercel's filesystem is read-only; avoid FileStore until Redis is connected.
+  if (env.VERCEL) return new MemoryStore();
   return FileStore.lazy(path.resolve(env.DATA_DIR ?? "data"));
 }
