@@ -2,20 +2,19 @@ import express from "express";
 import { createApp } from "./create-app.js";
 import { createStoreFromEnv } from "./store.js";
 
+// Keep a direct `express` import in this entry file for Vercel detection.
+// Do not add a sibling src/app.ts — that filename wins entrypoint detection.
+void express;
+
 const onVercel = Boolean(process.env.VERCEL);
 
-// `import express` must appear in this entry file so Vercel can detect it.
-// Prefer this over a sibling src/app.ts (that filename wins detection).
-const app = express();
-app.use(
-  createApp({
-    store: createStoreFromEnv(),
-    corsOrigin: process.env.CORS_ORIGIN ?? "http://localhost:3000",
-    rateLimitMax: Number(process.env.RATE_LIMIT_MAX ?? 10),
-    rateLimitWindowMs: Number(process.env.RATE_LIMIT_WINDOW_MS ?? 60_000),
-    trustProxy: onVercel,
-  }),
-);
+const app = createApp({
+  store: createStoreFromEnv(),
+  corsOrigin: process.env.CORS_ORIGIN ?? "http://localhost:3000",
+  rateLimitMax: Number(process.env.RATE_LIMIT_MAX ?? 10),
+  rateLimitWindowMs: Number(process.env.RATE_LIMIT_WINDOW_MS ?? 60_000),
+  trustProxy: onVercel,
+});
 
 // Vercel invokes the exported app; only listen locally.
 if (!onVercel) {
