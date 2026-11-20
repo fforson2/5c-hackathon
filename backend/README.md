@@ -14,7 +14,7 @@ Env vars (see `.env.example`): `PORT`, `CORS_ORIGIN`, `DATA_DIR`, `RATE_LIMIT_MA
 - `npm run dev` — watch mode
 - `npm test` — vitest + supertest
 - `npm run typecheck`
-- `npm run build` then `npm start`
+- `npm run compile` then `npm start`
 
 ## Endpoints
 See `../docs/api-contract.md`. Registrant emails are stored lowercased in `data/registrations.json` and never returned by any endpoint. POSTs are rate limited per IP (default 10/min). Note: behind a proxy, set Express `trust proxy` so the limiter sees client IPs.
