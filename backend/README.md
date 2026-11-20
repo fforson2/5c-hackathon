@@ -26,7 +26,7 @@ See `../docs/api-contract.md`. Registrant emails are stored lowercased in `data/
 `CORS_ORIGIN` accepts a comma-separated list of origins.
 
 ## Deploy on Vercel
-Vercel's filesystem is read-only, so production must use Redis. The Express app is the default export of `src/index.ts` (zero-config Express support); it only calls `listen()` when not running on Vercel.
+Vercel's filesystem is read-only, so production must use Redis. The Express app is the default export of `src/index.ts` (zero-config Express support; do not use a sibling `src/app.ts` — that filename wins entrypoint detection); it only calls `listen()` when not running on Vercel.
 
 1. Push the repo and import it in Vercel as a new project. Set **Root Directory** to `backend`. Framework preset: Express (auto-detected).
 2. In the project's **Storage** tab (or Marketplace), add **Upstash Redis** and connect it to the project. This injects `KV_REST_API_URL` / `KV_REST_API_TOKEN` (and/or `UPSTASH_REDIS_REST_*`) automatically.
