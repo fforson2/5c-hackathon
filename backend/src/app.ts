@@ -1,16 +1,17 @@
 import express, { type ErrorRequestHandler } from "express";
 import cors from "cors";
 import { ApiError } from "./errors.js";
-import { Store, type Team } from "./store.js";
+import { type DataStore, type Team } from "./store.js";
 import { eventInfo, faq, schedule } from "./seed.js";
 import { parseRegistration, parseTeam } from "./validate.js";
 import { rateLimit } from "./rateLimit.js";
 
 export interface AppOptions {
-  store: Store;
+  store: DataStore;
   corsOrigin?: string;
   rateLimitMax?: number;
   rateLimitWindowMs?: number;
+  trustProxy?: boolean;
 }
 
 const publicTeam = (t: Team) => ({
@@ -28,22 +29,24 @@ export function createApp(opts: AppOptions) {
   const { store } = opts;
   const app = express();
   app.disable("x-powered-by");
-  app.use(cors({ origin: opts.corsOrigin ?? "http://localhost:3000" }));
+  if (opts.trustProxy) app.set("trust proxy", 1);
+  const origins = (opts.corsOrigin ?? "http://localhost:3000").split(",").map((o) => o.trim()).filter(Boolean);
+  app.use(cors({ origin: origins }));
   app.use(express.json({ limit: "10kb" }));
 
   const api = express.Router();
   const limiter = rateLimit(opts.rateLimitMax ?? 10, opts.rateLimitWindowMs ?? 60_000);
 
   api.get("/health", (_req, res) => { res.json({ status: "ok" }); });
-  api.get("/event", (_req, res) => { res.json({ ...eventInfo, stats: store.stats() }); });
+  api.get("/event", async (_req, res) => { res.json({ ...eventInfo, stats: await store.stats() }); });
   api.get("/schedule", (_req, res) => {
     res.json({ items: [...schedule].sort((a, b) => a.startsAt.localeCompare(b.startsAt)) });
   });
   api.get("/faq", (_req, res) => { res.json({ items: faq }); });
 
-  api.get("/teams", (req, res) => {
+  api.get("/teams", async (req, res) => {
     const lf = typeof req.query.lookingFor === "string" ? req.query.lookingFor : undefined;
-    res.json({ items: store.listTeams(lf).map(publicTeam) });
+    res.json({ items: (await store.listTeams(lf)).map(publicTeam) });
   });
 
   api.post("/registrations", limiter, async (req, res) => {

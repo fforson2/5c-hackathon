@@ -30,9 +30,11 @@ The backend (see `../backend/README.md`) must be running on port 3002 for data t
 - `components/` — one component per section (`Hero`, `Tracks`, `Prizes`, `Schedule`, `Faq`, `RegisterForm`, `TeamBoard`)
 - `lib/api.ts` — typed API client matching `docs/api-contract.md`; `lib/types.ts` — shared types
 
-## Deploy (Vercel, 5chack.com)
+## Deploy on Vercel
 
-1. Import the GitHub repo in Vercel and set **Root Directory** to `frontend`.
-2. Add the env var `NEXT_PUBLIC_API_URL=https://api.5chack.com/api` (it is inlined at build time, so redeploy after changing it).
-3. Add the domains `5chack.com` (primary) and `www.5chack.com` (redirect to primary) under Project → Settings → Domains.
-4. At Squarespace (Domains → `5chack.com` → DNS Settings) add the records Vercel shows, and remove any default records pointing at Squarespace's site builder.
+Deploy the backend first so you have its production URL.
+
+1. Import the GitHub repo in Vercel as a new project and set **Root Directory** to `frontend` (the Next.js preset is auto-detected; no `vercel.json` needed).
+2. Before the first build, add the env var `NEXT_PUBLIC_API_URL` set to the backend's production URL including `/api`, e.g. `https://<backend>.vercel.app/api`. It is inlined at **build time**, so changing it requires a redeploy. If it is left unset, the build falls back to `http://localhost:3002/api` and the live site will not load data.
+3. Deploy, then set the backend's `CORS_ORIGIN` to the frontend's URL (e.g. `https://<frontend>.vercel.app`) and redeploy the backend.
+4. Optional custom domain (5chack.com): add `5chack.com` and `www.5chack.com` under Project → Settings → Domains, then add the DNS records Vercel shows at your registrar (Squarespace: Domains → DNS Settings), removing any default records pointing at Squarespace's site builder. Update `CORS_ORIGIN` to the custom domain.

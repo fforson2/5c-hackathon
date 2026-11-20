@@ -4,7 +4,7 @@ import { mkdtempSync, rmSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { createApp } from "../src/app.js";
-import { Store } from "../src/store.js";
+import { FileStore as Store } from "../src/store.js";
 
 let dir: string;
 const make = async (rateLimitMax = 1000) => {
